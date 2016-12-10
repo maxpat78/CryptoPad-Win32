@@ -8,6 +8,7 @@ Unlike previous projects, in addition to special ZIP AE-1 format this notepad ap
 Thanks to the CryptoCmd high level API, it is able to read and write its own special text documents, which are simple ZIP archives deflated and encrypted with AES for maximum security and portability.
 
 My simplified document format imposes some restrictions on the resulting ZIP archive:
+
 1. a fixed filename length of 4 bytes ("data");
 2. a single extra field (the AES header);
 3. Deflate compression always;
