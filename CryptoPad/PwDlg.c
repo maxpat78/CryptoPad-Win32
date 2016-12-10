@@ -1,20 +1,20 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+*  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License along
+*  with this program; if not, write to the Free Software Foundation, Inc.,
+*  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 
 #include <windows.h>
 #include <tchar.h>
@@ -30,13 +30,15 @@ LRESULT WINAPI PasswordWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT WINAPI EditSubclassProc(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR password[40];
+BOOL bSendOpenCommand;
 
-void AskPassword(void)
+void AskPassword(BOOL bForceOpen)
 {
-   hWndDialog = CreateDialog(NULL, MAKEINTRESOURCE(IDD_DIALOG1), hwndMain, PasswordWndProc);
-   wpOrigEditProc = (WNDPROC)SetWindowLong(GetDlgItem(hWndDialog, IDC_EDIT1), GWL_WNDPROC, (LONG)EditSubclassProc);
-   ShowWindow(hWndDialog, SW_SHOWDEFAULT);
-   SetFocus(GetDlgItem(hWndDialog, IDC_EDIT1));
+	bSendOpenCommand = bForceOpen;
+	hWndDialog = CreateDialog(NULL, MAKEINTRESOURCE(IDD_DIALOG1), hwndMain, PasswordWndProc);
+	wpOrigEditProc = (WNDPROC)SetWindowLong(GetDlgItem(hWndDialog, IDC_EDIT1), GWL_WNDPROC, (LONG)EditSubclassProc);
+	ShowWindow(hWndDialog, SW_SHOWDEFAULT);
+	SetFocus(GetDlgItem(hWndDialog, IDC_EDIT1));
 }
 
 LRESULT
@@ -91,6 +93,8 @@ PasswordWndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					  WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK|WC_NO_BEST_FIT_CHARS, password, -1, document_password, 80, NULL, NULL);
 				  }
 				  SetFocus(GetParent(hWnd));
+				  if (bSendOpenCommand)
+					  PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
 				  DestroyWindow(hWnd);
 			  }
 		  }

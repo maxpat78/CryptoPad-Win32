@@ -1,20 +1,20 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+*  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License along
+*  with this program; if not, write to the Free Software Foundation, Inc.,
+*  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 
 //
 //	CryptoPad - simple text editor application supporting ZIP AE-1 encryption
@@ -303,9 +303,7 @@ BOOL LoadFile()
 		else if (dwRead == MZAE_ERR_NOPW)
 		{
 			Free(dst);
-			LoadString(GetModuleHandle(0), IDS_ENOPW, &s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
-			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
+			PostMessage(hwndMain, WM_COMMAND, IDM_FILE_PASSWORD, TRUE);
 			return FALSE;
 		}
 		else if (dwRead != MZAE_ERR_BADZIP)
@@ -698,7 +696,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_FILE_OPEN:
-			if(ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
+			if (lParam == TRUE || ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
 			{
 				if (! LoadFile())
 					return FALSE;
@@ -742,7 +740,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_FILE_PASSWORD:
-			AskPassword();
+			// lParam set to TRUE force an IDM_FILE_OPEN command 
+			AskPassword(lParam);
 			break;
 
 		case ID_FILE_RESETPASSWORD:
