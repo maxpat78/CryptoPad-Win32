@@ -8,15 +8,15 @@ Unlike previous projects, in addition to special ZIP AE-1 format this notepad ap
 Thanks to the CryptoCmd high level API, it is able to read and write its own special text documents, which are simple ZIP archives deflated and encrypted with AES for maximum security and portability.
 
 My simplified document format imposes some restrictions on the resulting ZIP archive:
-1) a fixed filename length of 4 bytes ("data");
-2) a single extra field (the AES header);
-3) Deflate compression always;
-4) 256-bit key strength (but can decrypt with smaller keys);
-5) text encoded in UTF-8 without BOM, CR-LF ended.
+1. a fixed filename length of 4 bytes ("data");
+2. a single extra field (the AES header);
+3. Deflate compression always;
+4. 256-bit key strength (but can decrypt with smaller keys);
+5. text encoded in UTF-8 without BOM, CR-LF ended.
 
 The well known AE-1 specification from WinZip[1] is implemented, so one of the following cryptographic toolkits/libraries is required to run the app:
 
-- libeay32/libcrypto from OpenSSL[2] or LibreSSL[3] (actually this is the only crypto driver included by default)
+- libeay32/libcrypto from OpenSSL[2] or LibreSSL[3]: actually this is the only crypto driver included by default
 - Botan[4]
 - NSS3 from Mozilla[5]
 - Libgcrypt from GNU project[6]
