@@ -1,0 +1,268 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Italiano (Italia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ITA)
+LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 235, 72
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Set encrypted document password"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,109,51,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,163,51,50,14
+    EDITTEXT        IDC_EDIT1,7,25,221,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Type in your password...",IDC_STATIC1,7,7,221,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 65
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041004b0"
+        BEGIN
+            VALUE "CompanyName", "https://github.com/maxpat78"
+            VALUE "FileDescription", "A ZIP AE-1 encrypting notepad"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "CryptoPad"
+            VALUE "LegalCopyright", "Copyright (C) 2016 MaxPat78"
+            VALUE "OriginalFilename", "CryptoPad.exe"
+            VALUE "ProductName", "CryptoPad"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x410, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ERROR               "Error"
+    IDS_CONFIRM             "Confirm exit"
+    IDS_UNTITLED            "Untitled"
+    IDS_ENOMEM              "Can't allocate memory!"
+    IDS_EOPFILE             "Can't open the selected file!"
+    IDS_ERDFILE             "Can't read the file contents!"
+    IDS_EWRFILE             "Can't save the file!"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_EBADPW              "Bad password, can't decode document!"
+    IDS_ENOPW               "No password set, can't decode document!"
+    IDS_EECRYPT             "Error while encrypting the document!"
+    IDS_EDCRYPT             "Error while decoding the encrypted document!"
+    IDS_EBADPW0             "Bad password"
+    IDS_ESHORTPW1           "Short password"
+    IDS_ESHORTPW2           "Password must be at least 4 characters long! Try again..."
+    IDS_FILTER              "Text Files (*.txt)\001*.txt\001All Files (*.*)\001*.*\001\001"
+    IDS_NOTSAVED            "Document was modified but not saved: save it?"
+    IDS_NOTSET              "Couldn't set text in edit control!"
+    IDS_RETYPE              "Retype your password to confirm..."
+    IDS_TYPE                "Type in your password..."
+    IDS_ENOMATCH            "Passwords do not match: try again!"
+    IDS_NOTEPAD             "CryptoPad"
+    IDS_NOTEPAD2            "A ZIP AE-1 encrypting notepad."
+END
+
+#endif    // Italiano (Italia) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Inglese (Regno Unito) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                IDM_FILE_NEW
+        MENUITEM "&Open...\tCtrl+O",            IDM_FILE_OPEN
+        MENUITEM "&Save\tCtrl+S",               IDM_FILE_SAVE
+        MENUITEM "Save &as...",                 IDM_FILE_SAVEAS
+        MENUITEM SEPARATOR
+        POPUP "Encoding"
+        BEGIN
+            MENUITEM "utf8 BOM",                    ID_ENCODING_UTF8BOM
+            MENUITEM "utf16 LE",                    ID_ENCODING_UTF16LE
+            MENUITEM "utf16 BE",                    ID_ENCODING_UTF16BE
+            MENUITEM "ASCII",                       ID_ENCODING_ASCII
+        END
+        POPUP "EOL"
+        BEGIN
+            MENUITEM "CRLF",                        ID_ENCODING_CRLF
+            MENUITEM "CR",                          ID_ENCODING_CR
+            MENUITEM "LF",                          ID_ENCODING_LF
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Set Password",                IDM_FILE_PASSWORD
+        MENUITEM "Reset Password",              ID_FILE_RESETPASSWORD
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_FILE_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "Undo\tCtrl+U",                IDM_EDUNDO
+        MENUITEM SEPARATOR
+        MENUITEM "C&ut\tCtrl+X",                IDM_EDCUT
+        MENUITEM "&Copy\tCtrl+C",               IDM_EDCOPY
+        MENUITEM "&Paste\tCtrl+V",              IDM_EDPASTE
+        MENUITEM "Clear\tCANC",                 IDM_EDDEL
+        MENUITEM SEPARATOR
+        MENUITEM "Select all\tCTRL+A",          IDM_EDALLSEL
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      IDM_HELP_ABOUT
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "icon1.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS
+BEGIN
+    "N",            IDM_FILE_NEW,           VIRTKEY, CONTROL, NOINVERT
+    "O",            IDM_FILE_OPEN,          VIRTKEY, CONTROL, NOINVERT
+    "S",            IDM_FILE_SAVE,          VIRTKEY, CONTROL, NOINVERT
+    "X",            IDM_FILE_EXIT,          VIRTKEY, CONTROL, NOINVERT
+END
+
+#endif    // Inglese (Regno Unito) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
