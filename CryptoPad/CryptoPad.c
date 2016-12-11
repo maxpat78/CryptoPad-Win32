@@ -860,7 +860,7 @@ HWND CreateMainWnd()
 //
 //	Entry-point for text-editor application
 //
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int iShowCmd)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) 
 {
 	MSG			msg;
 	HACCEL		hAccel;
@@ -871,14 +871,24 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmdLine, int iShowC
 	// create the main window!
 	hwndMain = CreateMainWnd();
 
-	ShowWindow(hwndMain, iShowCmd);
+	ShowWindow(hwndMain, nCmdShow);
     UpdateWindow(hwndMain);
 
 	// load keyboard accelerator table
-	hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_ACCELERATOR1));
+	hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
 
 	szFileName[0]  = (TCHAR) 0;
 	szFileTitle[0] = (TCHAR) 0;
+
+	if (*pCmdLine)
+	{
+		lstrcpy(szFileName, pCmdLine);
+		lstrcpy(szFileTitle, PathFindFileName(pCmdLine));
+		// Remove extension
+		if (StrRStrI(szFileTitle, 0, _T(".txt")))
+			szFileTitle[lstrlen(szFileTitle) - 4] = _T('\0');
+		PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
+	}
 
 	// message-loop
 	while(GetMessage(&msg, NULL, 0, 0) > 0)
