@@ -418,15 +418,7 @@ BOOL SaveFile(int size)
 	char *lpBuffer, *dst;
 	DWORD dwSize, err;
 	LPTSTR p = NULL;
-	HANDLE hFile = CreateFile(szFileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		LoadString(GetModuleHandle(0), IDS_EWRFILE, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
-		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
-		return FALSE;
-	}
+	HANDLE hFile;
 
 	if (document_password && document_password[0])
 	{
@@ -498,6 +490,16 @@ aeerr:
 		Free(p);
 		p = dst;
 		size = dwOutSize;
+	}
+
+	hFile = CreateFile(szFileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		LoadString(GetModuleHandle(0), IDS_EWRFILE, &s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
+		return FALSE;
 	}
 
 	// Emit preamble if necessary
@@ -642,8 +644,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		hFont = CreateFont(0,0,0,0,FW_DONTCARE,0,0,0,DEFAULT_CHARSET,OUT_OUTLINE_PRECIS,
                 CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("Verdana"));
 		SendMessage(hwndEdit, WM_SETFONT, (WPARAM) hFont, 1);
+		// Remove the default limit of about 30.000 bytes in the buffer
+		// However, large texts degrade control's performance!
+		SendMessage(hwndEdit, EM_SETLIMITTEXT, 0, 0);
 		// automatically create new document when we start
 		PostMessage(hwnd, WM_COMMAND, IDM_FILE_NEW, 0);
+		DragAcceptFiles(hwnd, TRUE);
 		return 0;
 
 	case WM_CLOSE:
@@ -722,11 +728,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				int cb = GetWindowTextLength(hwndEdit) * sizeof(TCHAR) + sizeof(TCHAR);
 				szEditBuffer = Malloc(cb);
 				GetWindowText(hwndEdit, szEditBuffer, cb);
-				SaveFile(cb);
+				if (SaveFile(cb))
+				{
+					SetWindowFileName(hwnd, szFileTitle);
+					SendMessage(hwndEdit, EM_SETMODIFY, FALSE, 0);
+					SendMessage(hwndEdit, EM_EMPTYUNDOBUFFER, 0, 0);
+				}
 				Free(szEditBuffer);
-				SetWindowFileName(hwnd, szFileTitle);
-				SendMessage(hwndEdit, EM_SETMODIFY, FALSE, 0);
-				SendMessage(hwndEdit, EM_EMPTYUNDOBUFFER, 0, 0);
 			}
 		break;
 
@@ -797,9 +805,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case ID_ENCODING_LF:
 			uiFileEOL = EOL_LF;
 			break;
-		case EN_ERRSPACE:
-			MessageBox(hwnd, _T("Max text!"), _T("Max text"), MB_OK);
-			break;
 		}
 		break;
 
@@ -808,6 +813,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		height = (short)HIWORD(lParam);
 		MoveWindow(hwndEdit, 0, 0, width, height, TRUE);
 		return 0;
+
+	case WM_DROPFILES:
+	{
+		HANDLE hDrop = (HANDLE)wParam;
+		DragQueryFile(hDrop, 0, szFileName, sizeof(szFileName));
+		DragFinish(hDrop);
+		lstrcpy(szFileTitle, PathFindFileName(szFileName));
+		// Remove extension
+		if (StrRStrI(szFileTitle, 0, _T(".txt")))
+			szFileTitle[lstrlen(szFileTitle) - 4] = _T('\0');
+		PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
+		break;
+	}
+
 	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
