@@ -283,7 +283,7 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 {
 	long crc = 0;
 	unsigned long compSize, uncompSize, keyLen;
-	char* salt;
+	char *salt, *compdata;
 	char* aes_key;
 	char* hmac_key;
 	char* vv;
@@ -314,7 +314,7 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 		GW(28) != 11 || GW(34) != 0x9901 || GW(38) != 1 || GW(40) != 0x4541)
 		return MZAE_ERR_BADZIP;
 
-	compSize = GDW(18)-28;
+	compSize = GDW(18)-(12+(4+keyLen*4)); // size & offset depend on salt size!
 	uncompSize = GDW(22);
 
 	if (! *dstLen)
@@ -330,23 +330,24 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 		return MZAE_ERR_NOPW;
 
 	salt = src + 45;
-
+	compdata = src+(45+(4+keyLen*4)+2);
+	
 	// Here we regenerate the AES key, the HMAC key and the 16-bit verification value
 	if (MZAE_derive_keys(password, salt, 4+keyLen*4, &aes_key, &hmac_key, &vv))
 		return MZAE_ERR_KDF;
 	
 	// Compares the 16-bit verification values
-	if (GW(61) != *((unsigned short*)vv))
+	if (GW(45+(4+keyLen*4)) != *((unsigned short*)vv))
 		return MZAE_ERR_BADVV;
 
 	// Compares the HMACs
-	if (MZAE_hmac_sha1_80(hmac_key, 8*(keyLen+1), src+63, compSize, &digest))
+	if (MZAE_hmac_sha1_80(hmac_key, 8*(keyLen+1), compdata, compSize, &digest))
 		return MZAE_ERR_HMAC;
-	if (memcmp(digest, src+63+compSize, 10))
+	if (memcmp(digest, compdata+compSize, 10))
 		return MZAE_ERR_BADHMAC;
 
 	// Decrypts into a temporary buffer
-	if (MZAE_ctr_crypt(aes_key, 8*(keyLen+1), src+63, compSize, &pbuf))
+	if (MZAE_ctr_crypt(aes_key, 8*(keyLen+1), compdata, compSize, &pbuf))
 		return MZAE_ERR_AES;
 
 	if (MZAE_inflate(pbuf, compSize, *dst, uncompSize))
