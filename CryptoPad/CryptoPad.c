@@ -186,8 +186,8 @@ LPVOID Malloc(SIZE_T dwBytes)
 
 	if (! p)
 	{
-		LoadString(GetModuleHandle(0), IDS_ENOMEM, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ENOMEM, (LPWSTR) &s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) &s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndMain, s0, s1, MB_OK | MB_ICONSTOP);
 		return NULL;
 	}
@@ -249,8 +249,8 @@ BOOL LoadFile()
 
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		LoadString(GetModuleHandle(0), IDS_EOPFILE, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_EOPFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 		return FALSE;
 	}
@@ -264,8 +264,8 @@ BOOL LoadFile()
 	CloseHandle(hFile);
 	if (dwRead != dwInSize)
 	{
-		LoadString(GetModuleHandle(0), IDS_ERDFILE, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERDFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 		return FALSE;
 	}
@@ -295,8 +295,8 @@ BOOL LoadFile()
 		else if (dwRead == MZAE_ERR_BADVV)
 		{
 			Free(dst);
-			LoadString(GetModuleHandle(0), IDS_EBADPW, &s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_EBADPW, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 			return FALSE;
 		}
@@ -310,8 +310,8 @@ BOOL LoadFile()
 		{
 			// Problem with the decoder
 			Free(dst);
-			LoadString(GetModuleHandle(0), IDS_EDCRYPT, &s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_EDCRYPT, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 			return FALSE;
 		}
@@ -362,10 +362,10 @@ BOOL LoadFile()
 	if (dwEncoding == ENC_ANSI || dwEncoding == ENC_UTF8 || dwEncoding == ENC_UTF8_BOM)
 	{
 		// CHARACTERS representing the NULL terminated target string
-		int cchSize = MultiByteToWideChar(dwEncoding == ENC_ANSI? CP_ACP:CP_UTF8, 0, p, -1, 0, 0);
+		int cchSize = MultiByteToWideChar(dwEncoding == ENC_ANSI? CP_ACP:CP_UTF8, 0, (LPCCH) p, -1, 0, 0);
 		dwInSize = cchSize * sizeof(TCHAR);
 		szEditBuffer = Malloc(dwInSize);
-		MultiByteToWideChar(dwEncoding == ENC_ANSI ? CP_ACP : CP_UTF8, 0, p, -1, szEditBuffer, cchSize * sizeof(TCHAR));
+		MultiByteToWideChar(dwEncoding == ENC_ANSI ? CP_ACP : CP_UTF8, 0, (LPCCH) p, -1, szEditBuffer, cchSize * sizeof(TCHAR));
 		Free(lpBuffer);
 		lpBuffer = szEditBuffer;
 	}
@@ -415,7 +415,7 @@ BOOL LoadFile()
 
 BOOL SaveFile(int size)
 {
-	char *lpBuffer, *dst;
+	char *dst;
 	DWORD dwSize, err;
 	LPTSTR p = NULL;
 	HANDLE hFile;
@@ -482,8 +482,8 @@ BOOL SaveFile(int size)
 		{
 			Free(dst);
 aeerr:
-			LoadString(GetModuleHandle(0), IDS_EECRYPT, &s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_EECRYPT, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 			return FALSE;
 		}
@@ -496,8 +496,8 @@ aeerr:
 
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		LoadString(GetModuleHandle(0), IDS_EWRFILE, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_EWRFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 		return FALSE;
 	}
@@ -514,8 +514,8 @@ aeerr:
 
 	if (! err)
 	{
-		LoadString(GetModuleHandle(0), IDS_EWRFILE, &s0, sizeof(s0) / sizeof(TCHAR));
-		LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_EWRFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
 		return FALSE;
 	}
@@ -533,7 +533,7 @@ BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(ofn));
 
-	LoadString(GetModuleHandle(0), IDS_FILTER, &s0, sizeof(s0) / sizeof(TCHAR));
+	LoadString(GetModuleHandle(0), IDS_FILTER, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 	p = s0;
 	while(*p)
 	{
@@ -545,8 +545,8 @@ BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = hwnd;
 	ofn.lpstrFilter = s0;
-	ofn.lpstrFile = pstrFileName;
-	ofn.lpstrFileTitle = pstrTitleName;
+	ofn.lpstrFile = (LPTSTR) pstrFileName;
+	ofn.lpstrFileTitle = (LPTSTR) pstrTitleName;
 
 	ofn.nFilterIndex = 1;
 	ofn.nMaxFile = MAX_PATH;
@@ -556,8 +556,8 @@ BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 
 	ret = GetSaveFileName(&ofn);
 
-	// Add missing extension
-	if (!StrRStrI(ofn.lpstrFile, 0, _T(".txt")))
+	// Adds a default extension, if missing
+	if (!StrChr(ofn.lpstrFile, _T('.')))
 		lstrcat(ofn.lpstrFile, _T(".txt"));
 
 	return ret;
@@ -570,7 +570,7 @@ BOOL ShowOpenFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 	OPENFILENAME ofn;
 
 	ZeroMemory(&ofn, sizeof(ofn));
-	LoadString(GetModuleHandle(0), IDS_FILTER, &s1, sizeof(s1) / sizeof(TCHAR));
+	LoadString(GetModuleHandle(0), IDS_FILTER, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 	p = s1;
 	while (*p)
 	{
@@ -582,8 +582,8 @@ BOOL ShowOpenFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner		= hwnd;
 	ofn.lpstrFilter		= s1;
-	ofn.lpstrFile = pstrFileName;
-	ofn.lpstrFileTitle = pstrTitleName;
+	ofn.lpstrFile = (LPTSTR) pstrFileName;
+	ofn.lpstrFileTitle = (LPTSTR) pstrTitleName;
 	ofn.nFilterIndex	= 1;
 	ofn.nMaxFile		= MAX_PATH;
 	ofn.nMaxFileTitle	= _MAX_FNAME + _MAX_EXT;
@@ -655,8 +655,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 		if (SendMessage(hwndEdit, EM_GETMODIFY, 0, 0))
 		{
-			LoadString(GetModuleHandle(0), IDS_CONFIRM, &s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_NOTSAVED, &s1, sizeof(s1) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_CONFIRM, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_NOTSAVED, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			int ret = MessageBox(hwndMain, s1,
 				s0, MB_YESNOCANCEL | MB_ICONEXCLAMATION);
 			if (ret == IDCANCEL)
@@ -693,7 +693,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			uiFileEncoding = ENC_UTF8_BOM;
 			uiFileEOL = EOL_CRLF;
 			document_password[0] = (char)0;
-			LoadString(GetModuleHandle(0), IDS_UNTITLED, &s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_UNTITLED, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 			SetWindowFileName(hwnd, s0);
 			SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)_T(""));
 			SendMessage(hwndEdit, EM_SETMODIFY, FALSE, 0);
@@ -709,8 +709,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				if (!SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)szEditBuffer))
 				{
-					LoadString(GetModuleHandle(0), IDS_NOTSET, &s0, sizeof(s0) / sizeof(TCHAR));
-					LoadString(GetModuleHandle(0), IDS_ERROR, &s1, sizeof(s1) / sizeof(TCHAR));
+					LoadString(GetModuleHandle(0), IDS_NOTSET, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+					LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 					return MessageBox(hwnd, s0, s1, MB_OK | MB_ICONSTOP);
 				}
 				SetWindowFileName(hwnd, szFileTitle);
@@ -739,7 +739,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 		case IDM_FILE_SAVEAS:
-			if (ShowSaveAsFileDlg(hwnd, szFileName, szFileTitle))
+			if (ShowSaveAsFileDlg(hwnd, (PSTR) szFileName, (PSTR) szFileTitle))
 				SendMessage(hwnd, WM_COMMAND, IDM_FILE_SAVE, 0);
 			break;
 
@@ -753,7 +753,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case ID_FILE_RESETPASSWORD:
-			document_password[0] = NULL;
+			document_password[0] = (char) NULL;
 			break;
 
         case IDM_EDUNDO:
