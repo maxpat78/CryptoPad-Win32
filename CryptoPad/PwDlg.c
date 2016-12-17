@@ -35,6 +35,7 @@ BOOL bSendOpenCommand;
 void AskPassword(BOOL bForceOpen)
 {
 	bSendOpenCommand = bForceOpen;
+	password[0] = (TCHAR) NULL;
 	hWndDialog = CreateDialog(NULL, MAKEINTRESOURCE(IDD_DIALOG1), hwndMain, PasswordWndProc);
 	wpOrigEditProc = (WNDPROC)SetWindowLong(GetDlgItem(hWndDialog, IDC_EDIT1), GWL_WNDPROC, (LONG)EditSubclassProc);
 	ShowWindow(hWndDialog, SW_SHOWDEFAULT);
@@ -61,32 +62,31 @@ PasswordWndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			  GetDlgItemText(hWnd, IDC_EDIT1, pw, 80);
 			  if (lstrlen(pw) < 4)
 			  {
-				  LoadString(GetModuleHandle(0), IDS_ESHORTPW2, &s0, sizeof(s0) / sizeof(TCHAR));
-				  LoadString(GetModuleHandle(0), IDS_ESHORTPW1, &s1, sizeof(s1) / sizeof(TCHAR));
-				  MessageBox(hWnd, s0, s1, MB_ICONSTOP | MB_OK);
-				  SetFocus(GetParent(hWnd));
 				  DestroyWindow(hWnd);
+				  LoadString(GetModuleHandle(0), IDS_ESHORTPW2, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+				  LoadString(GetModuleHandle(0), IDS_ESHORTPW1, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
+				  MessageBox(NULL, s0, s1, MB_APPLMODAL | MB_TOPMOST | MB_ICONSTOP | MB_OK);
+				  return 0;
 			  }
 			  if (!password[0])
 			  {
 				  lstrcpy(password, pw);
 				  SetDlgItemText(hWnd, IDC_EDIT1, _T(""));
-				  LoadString(GetModuleHandle(0), IDS_RETYPE, &s0, sizeof(s0) / sizeof(TCHAR));
+				  LoadString(GetModuleHandle(0), IDS_RETYPE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 				  SetDlgItemText(hWnd, IDC_STATIC1, s0);
 				  SetFocus(GetDlgItem(hWnd, IDC_EDIT1));
+				  return 0;
 			  }
 			  else
 			  {
 				  if (lstrcmp(pw, password))
 				  {
-					  LoadString(GetModuleHandle(0), IDS_EBADPW0, &s0, sizeof(s0) / sizeof(TCHAR));
-					  LoadString(GetModuleHandle(0), IDS_ENOMATCH, &s1, sizeof(s1) / sizeof(TCHAR));
-					  MessageBox(hWnd, s1, s0, MB_ICONSTOP | MB_OK);
-					  SetDlgItemText(hWnd, IDC_EDIT1, _T(""));
-					  LoadString(GetModuleHandle(0), IDS_TYPE, &s0, sizeof(s0) / sizeof(TCHAR));
-					  SetDlgItemText(hWnd, IDC_STATIC1, s0);
-					  pw[0] = (TCHAR)0;
+					  DestroyWindow(hWnd);
+					  LoadString(GetModuleHandle(0), IDS_EBADPW0, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
+					  LoadString(GetModuleHandle(0), IDS_ENOMATCH, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
+					  MessageBox(hwndMain, s1, s0, MB_APPLMODAL | MB_TOPMOST | MB_ICONSTOP | MB_OK);
 					  password[0] = (TCHAR)0;
+					  return 0;
 				  }
 				  else
 				  {
@@ -113,13 +113,16 @@ LRESULT APIENTRY EditSubclassProc(
 	WPARAM wParam,
 	LPARAM lParam)
 {
-	if (uMsg == WM_KEYUP)
+	if (uMsg == WM_KEYDOWN)
 	{
-		if (wParam == 0x0D)
+		if (wParam == VK_RETURN)
 			SendMessage(hWndDialog, WM_COMMAND, IDOK, 0);
-		if (wParam == 0x1B)
+		if (wParam == VK_ESCAPE)
 			SendMessage(hWndDialog, WM_COMMAND, IDCANCEL, 0);
 	}
+
+	if (wParam == VK_RETURN)
+		return 0; // Suppress annoying BEEP
 
 	return CallWindowProc(wpOrigEditProc, hwnd, uMsg, wParam, lParam);
 }
