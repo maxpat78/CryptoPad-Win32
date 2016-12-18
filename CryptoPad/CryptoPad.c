@@ -288,7 +288,7 @@ BOOL LoadFile()
 		
 		if (dwRead == MZAE_ERR_SUCCESS)
 		{
-			dwEncoding = ENC_UTF8; // Text format is always UTF-8
+//			dwEncoding = ENC_UTF8; // Text format is always UTF-8
 			Free(lpBuffer);
 			p = lpBuffer = dst;
 		}
