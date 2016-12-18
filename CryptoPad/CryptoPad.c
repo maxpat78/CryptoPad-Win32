@@ -458,12 +458,12 @@ BOOL SaveFile(int size)
 			t++;
 		}
 		p = szEditBuffer;
-		size--;
+		size -= 2; // Does NOT count ending NULL
 	}
 	else
 	{
 		p = szEditBuffer;
-		size--;
+		size -= 2; // Does NOT count ending NULL
 	}
 
 	if (document_password && document_password[0])
@@ -525,6 +525,18 @@ aeerr:
 	return TRUE;
 }
 
+
+int AskToSave()
+{
+	if (SendMessage(hwndEdit, EM_GETMODIFY, 0, 0))
+	{
+		LoadString(GetModuleHandle(0), IDS_CONFIRM, (LPWSTR)s0, sizeof(s0) / sizeof(TCHAR));
+		LoadString(GetModuleHandle(0), IDS_NOTSAVED, (LPWSTR)s1, sizeof(s1) / sizeof(TCHAR));
+		return  MessageBox(hwndMain, s1, s0, MB_YESNOCANCEL | MB_ICONEXCLAMATION);
+	}
+
+	return -1;
+}
 
 BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 {
@@ -628,49 +640,42 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	static int width, height;
 	HFONT hFont;
 
-	switch(msg)
+	switch (msg)
 	{
 	case WM_CREATE:
 		document_password = Malloc(128);
 		hwndEdit = CreateWindowEx(0,
-		_T("EDIT"), NULL,
-		WS_VSCROLL | WS_CHILD | WS_VISIBLE |
-		ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
-		0, 0, 0, 0,
-		hwnd,
-		0,
-		GetModuleHandle(0),
-		0);
-		hFont = CreateFont(0,0,0,0,FW_DONTCARE,0,0,0,DEFAULT_CHARSET,OUT_OUTLINE_PRECIS,
-                CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("Verdana"));
-		SendMessage(hwndEdit, WM_SETFONT, (WPARAM) hFont, 1);
+			_T("EDIT"), NULL,
+			WS_VSCROLL | WS_CHILD | WS_VISIBLE |
+			ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
+			0, 0, 0, 0,
+			hwnd,
+			0,
+			GetModuleHandle(0),
+			0);
+		hFont = CreateFont(0, 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
+			CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Verdana"));
+		SendMessage(hwndEdit, WM_SETFONT, (WPARAM)hFont, 1);
 		// Remove the default limit of about 30.000 bytes in the buffer
 		// However, large texts degrade control's performance!
 		SendMessage(hwndEdit, EM_SETLIMITTEXT, 0, 0);
 		// automatically create new document when we start
-		PostMessage(hwnd, WM_COMMAND, IDM_FILE_NEW, 0);
+		SendMessage(hwnd, WM_COMMAND, IDM_FILE_NEW, 0);
 		DragAcceptFiles(hwnd, TRUE);
 		return 0;
 
 	case WM_CLOSE:
-		if (SendMessage(hwndEdit, EM_GETMODIFY, 0, 0))
-		{
-			LoadString(GetModuleHandle(0), IDS_CONFIRM, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
-			LoadString(GetModuleHandle(0), IDS_NOTSAVED, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
-			int ret = MessageBox(hwndMain, s1,
-				s0, MB_YESNOCANCEL | MB_ICONEXCLAMATION);
-			if (ret == IDCANCEL)
-				return 0;
-			if (ret == IDYES)
-			{
-				PostMessage(hwnd, WM_COMMAND, IDM_FILE_SAVE, 0);
-				return 0;
-			}
-			else
-				DestroyWindow(hwnd);
-		}
-		else
+	{
+		int ret = AskToSave();
+		if (ret == -1 || ret == IDNO)
 			DestroyWindow(hwnd);
+		else if (ret == IDYES)
+		{
+			SendMessage(hwnd, WM_COMMAND, IDM_FILE_SAVE, 0);
+			DestroyWindow(hwnd);
+		}
+
+	}
 		return 0;
 
 	case WM_DESTROY:
@@ -690,33 +695,55 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case IDM_FILE_NEW:
 		{
-			uiFileEncoding = ENC_UTF8_BOM;
-			uiFileEOL = EOL_CRLF;
-			document_password[0] = (char)0;
-			LoadString(GetModuleHandle(0), IDS_UNTITLED, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
-			SetWindowFileName(hwnd, s0);
-			SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)_T(""));
-			SendMessage(hwndEdit, EM_SETMODIFY, FALSE, 0);
-			SendMessage(hwndEdit, EM_EMPTYUNDOBUFFER, 0, 0);
+			int ret = AskToSave();
+			if (ret == -1 || ret == IDNO)
+			{
+				uiFileEncoding = ENC_UTF8_BOM;
+				uiFileEOL = EOL_CRLF;
+				document_password[0] = (char)0;
+				szFileName[0] = (TCHAR)0;
+				szFileTitle[0] = (TCHAR)0;
+				LoadString(GetModuleHandle(0), IDS_UNTITLED, (LPWSTR)s0, sizeof(s0) / sizeof(TCHAR));
+				SetWindowFileName(hwnd, s0);
+				SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)_T(""));
+				SendMessage(hwndEdit, EM_SETMODIFY, FALSE, 0);
+				SendMessage(hwndEdit, EM_EMPTYUNDOBUFFER, 0, 0);
+			}
+			else if (ret == IDYES)
+			{
+				SendMessage(hwnd, WM_COMMAND, IDM_FILE_SAVE, 0);
+				SendMessage(hwnd, WM_COMMAND, IDM_FILE_NEW, 0);
+			}
 		}
 			break;
 
 		case IDM_FILE_OPEN:
-			if (lParam == TRUE || ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
+		{
+			int ret = AskToSave();
+			if (ret == -1 || ret == IDNO)
 			{
-				if (! LoadFile())
-					return FALSE;
-
-				if (!SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)szEditBuffer))
+				if (lParam == TRUE || ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
 				{
-					LoadString(GetModuleHandle(0), IDS_NOTSET, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
-					LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
-					return MessageBox(hwnd, s0, s1, MB_OK | MB_ICONSTOP);
+					if (!LoadFile())
+						return FALSE;
+
+					if (!SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)szEditBuffer))
+					{
+						LoadString(GetModuleHandle(0), IDS_NOTSET, (LPWSTR)s0, sizeof(s0) / sizeof(TCHAR));
+						LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR)s1, sizeof(s1) / sizeof(TCHAR));
+						return MessageBox(hwnd, s0, s1, MB_OK | MB_ICONSTOP);
+					}
+					SetWindowFileName(hwnd, szFileTitle);
+					Free(szEditBufferBase);
 				}
-				SetWindowFileName(hwnd, szFileTitle);
-				Free(szEditBufferBase);
 			}
-            break;
+			else if (ret == IDYES)
+			{
+				SendMessage(hwnd, WM_COMMAND, IDM_FILE_SAVE, 0);
+				SendMessage(hwnd, WM_COMMAND, IDM_FILE_OPEN, lParam);
+			}
+		}
+			break;
 
 		case IDM_FILE_SAVE:
 			if (!szFileName[0])
