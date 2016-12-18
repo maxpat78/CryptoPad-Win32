@@ -32,7 +32,6 @@
 enum Encodings {
 	ENC_UNKNOWN,
 	ENC_ANSI,
-	ENC_UTF8,
 	ENC_UTF8_BOM,
 	ENC_UTF16LE,
 	ENC_UTF16BE
@@ -212,7 +211,7 @@ void FlushMenus()
 	CheckMenuItem(menu, ID_ENCODING_CRLF, (uiFileEOL == EOL_CRLF) ? MF_CHECKED : MF_UNCHECKED);
 
 	CheckMenuItem(menu, ID_ENCODING_ASCII, (uiFileEncoding == ENC_ANSI) ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(menu, ID_ENCODING_UTF8BOM, (uiFileEncoding == ENC_UTF8_BOM || uiFileEncoding == ENC_UTF8) ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(menu, ID_ENCODING_UTF8BOM, (uiFileEncoding == ENC_UTF8_BOM) ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(menu, ID_ENCODING_UTF16LE, (uiFileEncoding == ENC_UTF16LE) ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(menu, ID_ENCODING_UTF16BE, (uiFileEncoding == ENC_UTF16BE) ? MF_CHECKED : MF_UNCHECKED);
 
@@ -288,7 +287,6 @@ BOOL LoadFile()
 		
 		if (dwRead == MZAE_ERR_SUCCESS)
 		{
-//			dwEncoding = ENC_UTF8; // Text format is always UTF-8
 			Free(lpBuffer);
 			p = lpBuffer = dst;
 		}
@@ -359,7 +357,7 @@ BOOL LoadFile()
 		}
 	}
 
-	if (dwEncoding == ENC_ANSI || dwEncoding == ENC_UTF8 || dwEncoding == ENC_UTF8_BOM)
+	if (dwEncoding == ENC_ANSI || dwEncoding == ENC_UTF8_BOM)
 	{
 		// CHARACTERS representing the NULL terminated target string
 		int cchSize = MultiByteToWideChar(dwEncoding == ENC_ANSI? CP_ACP:CP_UTF8, 0, (LPCCH) p, -1, 0, 0);
@@ -422,7 +420,7 @@ BOOL SaveFile(int size)
 
 	if (document_password && document_password[0])
 	{
-		uiFileEncoding = ENC_UTF8; // An encrypted file becomes ALWAYS UTF8
+		uiFileEncoding = ENC_UTF8_BOM; // An encrypted file becomes ALWAYS UTF8
 		uiFileEOL = EOL_CRLF; // And CR-LF line ended! 
 	}
 
@@ -440,13 +438,18 @@ BOOL SaveFile(int size)
 		Free(szEditBuffer);
 	}
 
-	if (uiFileEncoding == ENC_ANSI || uiFileEncoding == ENC_UTF8 || uiFileEncoding == ENC_UTF8_BOM || uiFileEncoding == ENC_UTF8)
+	if (uiFileEncoding == ENC_ANSI || uiFileEncoding == ENC_UTF8_BOM)
 	{
 		// CHARACTERS representing the NULL terminated target string
 		int cchSize = WideCharToMultiByte(uiFileEncoding == ENC_ANSI? CP_ACP:CP_UTF8, 0, szEditBuffer, -1, 0, 0, 0, 0);
-		p = Malloc(cchSize * sizeof(char));
-		WideCharToMultiByte(uiFileEncoding == ENC_ANSI ? CP_ACP : CP_UTF8, 0, szEditBuffer, -1, p, cchSize, 0, 0);
-		size = cchSize - 1; // Does NOT count ending NULL
+		int BOMsize = (uiFileEncoding == ENC_ANSI) ? 0 : 3;
+		p = Malloc(cchSize * sizeof(char) + BOMsize);
+		if (BOMsize)
+		{
+			CopyMemory(p, "\xEF\xBB\xBF", 3);
+		}
+		WideCharToMultiByte(uiFileEncoding == ENC_ANSI ? CP_ACP : CP_UTF8, 0, szEditBuffer, -1, ((char*)p+BOMsize), cchSize, 0, 0);
+		size = cchSize + BOMsize - 1; // Does NOT count ending NULL
 	}
 	else if (uiFileEncoding == ENC_UTF16BE)
 	{
@@ -507,8 +510,6 @@ aeerr:
 		err = WriteFile(hFile, "\xFF\xFE", 2, &dwSize, 0);
 	else if (uiFileEncoding == ENC_UTF16BE)
 		err = WriteFile(hFile, "\xFE\xFF", 2, &dwSize, 0);
-	else if (uiFileEncoding == ENC_UTF8_BOM)
-		err = WriteFile(hFile, "\xEF\xBB\xBF", 3, &dwSize, 0);
 
 	err += WriteFile(hFile, p, size, &size, 0);
 

@@ -13,7 +13,7 @@ My simplified document format imposes some restrictions on the resulting ZIP arc
 2. a single extra field (the AES header);
 3. Deflate compression always;
 4. 256-bit key strength (but can decrypt with smaller keys);
-5. text encoded in UTF-8 without BOM, CR-LF ended.
+5. text encoded in UTF-8 with BOM, CR-LF ended.
 
 The well known AE-1 specification from WinZip[1] is implemented, so one of the following cryptographic toolkits/libraries is required to run the app:
 

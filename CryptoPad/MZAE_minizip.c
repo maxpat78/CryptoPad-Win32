@@ -25,7 +25,7 @@
    2) a single extra field (the AES header);
    3) Deflate compression always;
    4) 256-bit key strength (but can decrypt with smaller keys);
-   5) text encoded in UTF-8 without BOM, CR-LF ended.
+   5) text encoded in UTF-8 with BOM, CR-LF ended.
 
    A summary of ZIP archive with strong encryption layout (according to WinZip
    specs: look at http://www.winzip.com/aes_info.htm) follows.
