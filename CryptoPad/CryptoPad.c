@@ -414,7 +414,7 @@ BOOL LoadFile()
 BOOL SaveFile(int size)
 {
 	char *dst;
-	DWORD dwSize, err;
+	DWORD dwSize, err=0;
 	LPTSTR p = NULL;
 	HANDLE hFile;
 
@@ -607,10 +607,6 @@ BOOL ShowOpenFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 
 	ret = GetOpenFileName(&ofn);
 
-	// Remove extension
-	if (StrRStrI(ofn.lpstrFileTitle, 0, _T(".txt")))
-		ofn.lpstrFileTitle[lstrlen(ofn.lpstrFileTitle) - 4] = _T('\0');
-
 	return ret;
 }
 
@@ -627,6 +623,10 @@ void ShowAboutDlg(HWND hwndParent)
 void SetWindowFileName(HWND hwnd, TCHAR *szFileName)
 {
 	TCHAR ach[MAX_PATH + sizeof(szAppName) + 4];
+
+	// Remove extension
+	if (StrRStrI(szFileName, 0, _T(".txt")))
+		szFileName[lstrlen(szFileName) - 4] = _T('\0');
 
 	wsprintf(ach, _T("%s - %s"), szFileName, szAppName);
 
@@ -848,9 +848,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		DragQueryFile(hDrop, 0, szFileName, sizeof(szFileName));
 		DragFinish(hDrop);
 		lstrcpy(szFileTitle, PathFindFileName(szFileName));
-		// Remove extension
-		if (StrRStrI(szFileTitle, 0, _T(".txt")))
-			szFileTitle[lstrlen(szFileTitle) - 4] = _T('\0');
 		PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
 		break;
 	}
