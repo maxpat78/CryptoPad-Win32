@@ -72,7 +72,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,9
+ FILEVERSION 1,0,0,10
  PRODUCTVERSION 1,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -90,7 +90,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "https://github.com/maxpat78"
             VALUE "FileDescription", "A ZIP AE-1 encrypting notepad"
-            VALUE "FileVersion", "1.0.0.9"
+            VALUE "FileVersion", "1.0.0.10"
             VALUE "InternalName", "CryptoPad"
             VALUE "LegalCopyright", "Copyright (C) 2016 maxpat78"
             VALUE "OriginalFilename", "CryptoPad.exe"
@@ -138,6 +138,12 @@ BEGIN
     IDS_ENOMATCH            "Passwords do not match: try again!"
     IDS_NOTEPAD             "CryptoPad"
     IDS_NOTEPAD2            "A ZIP AE-1 encrypting notepad."
+    IDS_STRING127           "Confirm overwrite"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING128           "Selected file already exists: overwrite it?"
 END
 
 #endif    // Italiano (Italia) resources

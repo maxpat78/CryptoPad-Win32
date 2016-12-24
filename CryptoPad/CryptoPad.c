@@ -434,8 +434,8 @@ BOOL SaveFile(int size)
 		cb = ConvertEOL(szEditBuffer, size,	EOL_CRLF,
 			q, cb, uiFileEOL,
 			cCR, cLF, cCRLF);
-		szEditBuffer = q;
 		Free(szEditBuffer);
+		szEditBuffer = q;
 	}
 
 	if (uiFileEncoding == ENC_ANSI || uiFileEncoding == ENC_UTF8_BOM)
@@ -541,7 +541,7 @@ int AskToSave()
 
 BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 {
-	DWORD ret;
+	DWORD ret, ans = IDNO;
 	TCHAR* p;
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -567,12 +567,23 @@ BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 
 	ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING;
 
-	ret = GetSaveFileName(&ofn);
+	while (ans == IDNO)
+	{
+		ret = GetSaveFileName(&ofn);
 
-	// Adds a default extension, if missing
-	if (!StrChr(ofn.lpstrFile, _T('.')))
-		lstrcat(ofn.lpstrFile, _T(".txt"));
+		// Adds a default extension, if missing
+		if (!StrChr(ofn.lpstrFile, _T('.')))
+			lstrcat(ofn.lpstrFile, _T(".txt"));
 
+		if (PathFileExists(ofn.lpstrFile))
+		{
+			LoadString(GetModuleHandle(0), IDS_STRING127, (LPWSTR)s0, sizeof(s0) / sizeof(TCHAR));
+			LoadString(GetModuleHandle(0), IDS_STRING128, (LPWSTR)s1, sizeof(s1) / sizeof(TCHAR));
+			ans = MessageBox(hwndMain, s1, s0, MB_YESNO | MB_ICONEXCLAMATION);
+		}
+		else
+			ans = IDYES;
+	}
 	return ret;
 }
 

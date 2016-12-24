@@ -29,6 +29,8 @@
 #define IDS_ENOMATCH                    124
 #define IDS_NOTEPAD                     125
 #define IDS_NOTEPAD2                    126
+#define IDS_STRING127                   127
+#define IDS_STRING128                   128
 #define IDC_EDIT1                       1000
 #define IDM_FILE_NEW                    40001
 #define IDM_FILE_OPEN                   40002
