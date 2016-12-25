@@ -72,7 +72,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,10
+ FILEVERSION 1,0,0,11
  PRODUCTVERSION 1,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -90,7 +90,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "https://github.com/maxpat78"
             VALUE "FileDescription", "A ZIP AE-1 encrypting notepad"
-            VALUE "FileVersion", "1.0.0.10"
+            VALUE "FileVersion", "1.0.0.11"
             VALUE "InternalName", "CryptoPad"
             VALUE "LegalCopyright", "Copyright (C) 2016 maxpat78"
             VALUE "OriginalFilename", "CryptoPad.exe"

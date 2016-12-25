@@ -71,6 +71,13 @@ PasswordWndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			  if (!password[0])
 			  {
 				  lstrcpy(password, pw);
+				  if (bSendOpenCommand) // Asks once
+				  {
+					  WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS,
+						  password, -1, document_password, 80, NULL, NULL);
+					  PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
+					  DestroyWindow(hWnd);
+				  }
 				  SetDlgItemText(hWnd, IDC_EDIT1, _T(""));
 				  LoadString(GetModuleHandle(0), IDS_RETYPE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 				  SetDlgItemText(hWnd, IDC_STATIC1, s0);
@@ -93,8 +100,6 @@ PasswordWndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					  WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK|WC_NO_BEST_FIT_CHARS, password, -1, document_password, 80, NULL, NULL);
 				  }
 				  SetFocus(GetParent(hWnd));
-				  if (bSendOpenCommand)
-					  PostMessage(hwndMain, WM_COMMAND, IDM_FILE_OPEN, TRUE);
 				  DestroyWindow(hWnd);
 			  }
 		  }
