@@ -702,7 +702,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		switch(LOWORD(wParam))
 		{
 		case IDM_FILE_EXIT:
-            PostQuitMessage(0);
+			SendMessage(hwnd, WM_CLOSE, 0, 0);
  			break;
 
 		case IDM_FILE_NEW:
