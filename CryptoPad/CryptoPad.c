@@ -737,7 +737,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				if (lParam == TRUE || ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
 				{
 					if (!LoadFile())
+					{
+						szFileName[0] = (TCHAR)0;
 						return FALSE;
+					}
 
 					if (!SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)szEditBuffer))
 					{
