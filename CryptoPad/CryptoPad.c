@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+*  Copyright (C) 2016,2017  <maxpat78> <https://github.com/maxpat78>
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -238,7 +238,7 @@ void FlushMenus()
 }
 
 
-BOOL LoadFile()
+int LoadFile()
 {
 	DWORD dwInSize, dwOutSize, dwRead, dwEncoding = ENC_UNKNOWN;
 	UINT cCR, cLF, cCRLF;
@@ -251,13 +251,13 @@ BOOL LoadFile()
 		LoadString(GetModuleHandle(0), IDS_EOPFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
-		return FALSE;
+		return -1;
 	}
 
 	dwInSize = GetFileSize(hFile, NULL);
 	lpBuffer = Malloc(dwInSize + sizeof(TCHAR));
 	if (!lpBuffer)
-		return FALSE;
+		return -1;
 
 	ReadFile(hFile, lpBuffer, dwInSize, &dwRead, 0);
 	CloseHandle(hFile);
@@ -266,7 +266,7 @@ BOOL LoadFile()
 		LoadString(GetModuleHandle(0), IDS_ERDFILE, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 		LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 		MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
-		return FALSE;
+		return -1;
 	}
 
 	if (dwInSize > 4 && *((DWORD*)lpBuffer) == 0x04034B50)
@@ -280,7 +280,7 @@ BOOL LoadFile()
 		{
 			dst = Malloc(dwOutSize+sizeof(TCHAR));
 			if (!dst)
-				return FALSE;
+				return -1;
 		}
 
 		dwRead = MiniZipAE1Read(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
@@ -296,13 +296,13 @@ BOOL LoadFile()
 			LoadString(GetModuleHandle(0), IDS_EBADPW, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 			LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
-			return FALSE;
+			return -1;
 		}
 		else if (dwRead == MZAE_ERR_NOPW)
 		{
 			Free(dst);
 			PostMessage(hwndMain, WM_COMMAND, IDM_FILE_PASSWORD, TRUE);
-			return FALSE;
+			return -2;
 		}
 		else if (dwRead != MZAE_ERR_BADZIP)
 		{
@@ -311,7 +311,7 @@ BOOL LoadFile()
 			LoadString(GetModuleHandle(0), IDS_EDCRYPT, (LPWSTR) s0, sizeof(s0) / sizeof(TCHAR));
 			LoadString(GetModuleHandle(0), IDS_ERROR, (LPWSTR) s1, sizeof(s1) / sizeof(TCHAR));
 			MessageBox(hwndEdit, s0, s1, MB_OK | MB_ICONSTOP);
-			return FALSE;
+			return -1;
 		}
 	}
 
@@ -406,7 +406,7 @@ BOOL LoadFile()
 
 	szEditBufferBase = lpBuffer;
 
-	return TRUE;
+	return 0;
 }
 
 
@@ -736,9 +736,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				if (lParam == TRUE || ShowOpenFileDlg(hwnd, szFileName, szFileTitle))
 				{
-					if (!LoadFile())
+					int LFRetCode = LoadFile();
+					if (LFRetCode)
 					{
-						szFileName[0] = (TCHAR)0;
+						if (LFRetCode != -2) // Error != NO PW (Must retry)
+							szFileName[0] = (TCHAR)0;
 						return FALSE;
 					}
 
