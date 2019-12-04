@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+ *  Copyright (C) 2016, 2019  <maxpat78> <https://github.com/maxpat78>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -125,6 +125,29 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	char* vv;
 	char *ppbuf;
 	char *digest, *p;
+	unsigned char ucLocalHeader[45] = {
+		0x50, 0x4B, 0x03, 0x04, 0x33, 0x00, 0x01, 0x00,
+		0x63, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x04, 0x00, 0x0B, 0x00, 0x64, 0x61,
+		0x74, 0x61, 0x01, 0x99, 0x07, 0x00, 0x01, 0x00,
+		0x41, 0x45, 0x03, 0x08, 0x00 
+	};
+	unsigned char ucCentralHeader[61] = {
+		0x50, 0x4B, 0x01, 0x02, 0x33, 0x00, 0x33, 0x00,
+		0x01, 0x00, 0x63, 0x00, 0x00, 0x00, 0x21, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x0B, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x61,
+		0x74, 0x61, 0x01, 0x99, 0x07, 0x00, 0x01, 0x00,
+		0x41, 0x45, 0x03, 0x08, 0x00 
+	};
+	unsigned char ucEndHeader[22] = {
+		0x50, 0x4B, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x01, 0x00, 0x3D, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00 
+	};
 #ifdef USE_TIME
 	time_t t;
 	struct tm *ptm;
@@ -138,7 +161,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	
 	if (! *dstLen)
 	{
-		*dstLen = buflen + 156; //73+61+22
+		*dstLen = buflen + 156; //(45+28)+61+22
 		free(tmpbuf);
 		return MZAE_ERR_SUCCESS;
 	}
@@ -183,6 +206,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	crc = MZAE_crc(0, src, srcLen);
 
 	p = *dst;
+	memcpy(p, ucLocalHeader, sizeof(ucLocalHeader));
 
 #ifdef BYTE_ORDER_1234
 	#define PDW(a, b) *((int*)(p+a)) = BS32(b)
@@ -193,32 +217,15 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 #endif
 
 	// Builds the ZIP Local File Header
-	PDW(0, 0x04034B50);
-	PW(4, 0x33);
-	PW(6, 1);
-	PW(8, 99);
 #ifdef USE_TIME
 	time(&t);
 	ptm = localtime(&t);
 	PW(10, ptm->tm_hour << 11 | ptm->tm_min << 5 | (ptm->tm_sec / 2));
 	PW(12, (ptm->tm_year - 80) << 9 | (ptm->tm_mon+1) << 5 | ptm->tm_mday);
-#else
-	PW(10, 0);
-	PW(12, 33); // 01-01-1980 00:00
 #endif
 	PDW(14, crc);
 	PDW(18, buflen+28);
 	PDW(22, srcLen);
-	PW(26, 4);
-	PW(28, 11);
-	memcpy(p + 30, "data", 4);
-	// Builds the extended AES Header
-	PW(34, 0x9901);
-	PW(36, 7);
-	PW(38, 1);
-	PW(40, 0x4541);
-	*((char*)(p + 42)) = 3;
-	PW(43, 8);
 
 	// Copies the raw contents: salt, check word, encrypted data and HMAC
 	memcpy(p + 45, salt, 16);
@@ -227,49 +234,22 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	memcpy(p + 63 + buflen, digest, 10);
 
 	p = *dst + 63 + buflen + 10;
+	memcpy(p, ucCentralHeader, sizeof(ucCentralHeader));
 
 	// Builds the ZIP Central File Header
-	PDW(0, 0x02014B50);
-	PW(4, 0x33);
-	PW(6, 0x33);
-	PW(8, 1);
-	PW(10, 99);
 #ifdef USE_TIME
 	PW(12, ptm->tm_hour << 11 | ptm->tm_min << 5 | (ptm->tm_sec / 2));
 	PW(14, (ptm->tm_year - 80) << 9 | (ptm->tm_mon+1) << 5 | ptm->tm_mday);
-#else
-	PW(12, 0);
-	PW(14, 33);
 #endif
 	PDW(16, crc);
 	PDW(20, buflen + 28);
 	PDW(24, srcLen);
-	PW(28, 4);
-	PW(30, 11);
-	PW(32, 0);
-	PW(34, 0);
-	PW(36, 0);
-	PDW(38, 0x20);
-	PDW(42, 0);
-	memcpy(p + 46, "data", 4);
-	// Builds the extended AES Header
-	PW(50, 0x9901);
-	PW(52, 7);
-	PW(54, 1);
-	PW(56, 0x4541);
-	*((char*)(p + 58)) = 3;
-	PW(59, 8);
 
 	p += 61;
+	memcpy(p, ucEndHeader, sizeof(ucEndHeader));
+	
 	// Builds the End Of Central Dir Record
-	PDW(0, 0x06054B50);
-	PW(4, 0);
-	PW(6, 0);
-	PW(8, 1);
-	PW(10, 1);
-	PDW(12, 61);
 	PDW(16, 63 + buflen + 10);
-	PW(20, 0);
 
 	free(tmpbuf);
 	free(ppbuf);
