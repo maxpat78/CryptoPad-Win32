@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+ *  Copyright (C) 2016, 2019  <maxpat78> <https://github.com/maxpat78>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <openssl/aes.h>
 #include <openssl/hmac.h>
+#include <openssl/rand.h>
 
 
 #ifdef BYTE_ORDER_1234
@@ -39,12 +40,11 @@ void betole64(unsigned long long *x) {
 int MZAE_gen_salt(char* salt, int saltlen)
 {
 	RAND_poll();
-	RAND_screen();
 
 	if (saltlen != 8 && saltlen != 12 && saltlen != 16)
 		return 1;
 	
-	if (!RAND_bytes(salt, saltlen) || !RAND_pseudo_bytes(salt, saltlen))
+	if (!RAND_bytes(salt, saltlen))
 		return 2;
 	
 	return 0;

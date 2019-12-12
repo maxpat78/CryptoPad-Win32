@@ -25,7 +25,12 @@
    2) a single extra field (the AES header);
    3) Deflate compression always;
    4) 256-bit key strength (but can decrypt with smaller keys);
-   5) text encoded in UTF-8 with BOM, CR-LF ended.
+   5) text encoded in UTF-8 with BOM, CR-LF ended;
+   6) text reversed before compression (V2) and thus
+   7) an archive comment of a single byte ("R").
+
+NOTE: 6) and 7) apply to newer V2 format. Files are always saved in V2 format
+but it can open old V1 format transparently.
 
    A summary of ZIP archive with strong encryption layout (according to WinZip
    specs: look at http://www.winzip.com/aes_info.htm) follows.
@@ -112,7 +117,15 @@ NOTE: AE-1 preserves CRC-32 on uncompressed data, AE-2 sets it to zero.
 	#define BS32(x) (x & 0xFF000000) >> 24 | ((x & 0xFF0000) >> 16) << 8 | ((x & 0xFF00) >> 8) << 16 | (x & 0xFF) << 24 
 #endif
 
-
+#define memrev(m, l) { \
+char *t = m; \
+char *b = m+l-1; \
+while (b > t) { \
+	char c = *t; \
+	*t=*b; *b=c; \
+	t++; b--; \
+} \
+}
 
 int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
 {
@@ -125,6 +138,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	char* vv;
 	char *ppbuf;
 	char *digest, *p;
+	char* revSrc;
 	unsigned char ucLocalHeader[45] = {
 		0x50, 0x4B, 0x03, 0x04, 0x33, 0x00, 0x01, 0x00,
 		0x63, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00,
@@ -143,10 +157,10 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 		0x74, 0x61, 0x01, 0x99, 0x07, 0x00, 0x01, 0x00,
 		0x41, 0x45, 0x03, 0x08, 0x00 
 	};
-	unsigned char ucEndHeader[22] = {
+	unsigned char ucEndHeader[23] = {
 		0x50, 0x4B, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
 		0x01, 0x00, 0x01, 0x00, 0x3D, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00 
+		0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x52 
 	};
 #ifdef USE_TIME
 	time_t t;
@@ -156,12 +170,17 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	if (!srcLen)
 		return MZAE_ERR_PARAMS;
 
-	if (MZAE_deflate(src, srcLen, &tmpbuf, &buflen))
+	// Reverse source buffer copy
+	revSrc = (char*) malloc(srcLen);
+	memcpy(revSrc, src, srcLen);
+	memrev(revSrc, srcLen)
+	
+	if (MZAE_deflate(revSrc, srcLen, &tmpbuf, &buflen))
 		return MZAE_ERR_CODEC;
 	
 	if (! *dstLen)
 	{
-		*dstLen = buflen + 156; //(45+28)+61+22
+		*dstLen = buflen + 45 + 28 + 61 + 23; //(45+28)+61+23
 		free(tmpbuf);
 		return MZAE_ERR_SUCCESS;
 	}
@@ -203,7 +222,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 		return MZAE_ERR_HMAC;
 	}
 
-	crc = MZAE_crc(0, src, srcLen);
+	crc = MZAE_crc(0, revSrc, srcLen);
 
 	p = *dst;
 	memcpy(p, ucLocalHeader, sizeof(ucLocalHeader));
@@ -253,6 +272,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 
 	free(tmpbuf);
 	free(ppbuf);
+	free(revSrc);
 	
 	return MZAE_ERR_SUCCESS;
 }
@@ -339,6 +359,9 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	if (crc != GDW(14))
 		return MZAE_ERR_BADCRC;
 
+	if (*(src+srcLen-1) == 0x52) // If V2 format
+		memrev(*dst, uncompSize)
+	
 	free(pbuf);
 
 	return MZAE_ERR_SUCCESS;
@@ -355,7 +378,7 @@ void main()
 #endif
 	char *s = "Questo testo è la sorgente da comprimere e cifrare con MiniZipAE1Write, per poi verificarne l'uguaglianza con il prodotto di MiniZipAE1Read!";
 	char *out1, *out2;
-	int len1=0, len2=0, r;
+	long len1=0, len2=0, r;
 	r = MiniZipAE1Write(s, strlen(s), &out1, &len1, "kazookazaa");
 	printf("MiniZipAE1Write returned %d: %s (requires %d bytes buffer)\n", r, MZAE_errmsg(r), len1);
 	out1 = (char*) malloc(len1);
