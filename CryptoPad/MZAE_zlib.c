@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+ *  Copyright (C) 2016, 2020  <maxpat78> <https://github.com/maxpat78>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ int MZAE_deflate(char* src, unsigned int srclen, char** dst, unsigned int* dstle
 	zstream.next_out = *dst;
 	zstream.avail_out = srclen+64;
 
-	if (deflate(&zstream, Z_FINISH) == Z_STREAM_ERROR)
+	if (deflate(&zstream, Z_FINISH) != Z_STREAM_END)
 		return 3;
 
 	deflateEnd(&zstream);

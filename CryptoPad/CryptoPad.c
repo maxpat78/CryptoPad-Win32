@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2016,2017  <maxpat78> <https://github.com/maxpat78>
+*  Copyright (C) 2016,2017,2020  <maxpat78> <https://github.com/maxpat78>
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -942,8 +942,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
 	if (*pCmdLine)
 	{
-		lstrcpy(szFileName, pCmdLine);
-		lstrcpy(szFileTitle, PathFindFileName(pCmdLine));
+		// Trims spaces and quotes in excess
+		TCHAR* startpos = pCmdLine;
+		TCHAR* endpos = startpos + lstrlen(pCmdLine);
+		while (*startpos == _T(' ') || *startpos == _T('"'))
+			startpos++;
+		while (*endpos-- == _T(' ') || *endpos == _T('"'))
+			;
+		*++endpos = _T('\0');
+		lstrcpy(szFileName, startpos);
+		lstrcpy(szFileTitle, PathFindFileName(szFileName));
 		// Remove extension
 		if (StrRStrI(szFileTitle, 0, _T(".txt")))
 			szFileTitle[lstrlen(szFileTitle) - 4] = _T('\0');
