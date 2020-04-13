@@ -37,7 +37,7 @@ void AskPassword(BOOL bForceOpen)
 	bSendOpenCommand = bForceOpen;
 	password[0] = (TCHAR) NULL;
 	hWndDialog = CreateDialog(NULL, MAKEINTRESOURCE(IDD_DIALOG1), hwndMain, PasswordWndProc);
-	wpOrigEditProc = (WNDPROC)SetWindowLong(GetDlgItem(hWndDialog, IDC_EDIT1), GWL_WNDPROC, (LONG)EditSubclassProc);
+	wpOrigEditProc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hWndDialog, IDC_EDIT1), GWLP_WNDPROC, EditSubclassProc);
 	ShowWindow(hWndDialog, SW_SHOWDEFAULT);
 	SetFocus(GetDlgItem(hWndDialog, IDC_EDIT1));
 }
