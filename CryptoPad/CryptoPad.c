@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2016,2017,2020  <maxpat78> <https://github.com/maxpat78>
+*  Copyright (C) 2016,2017,2020,2021  <maxpat78> <https://github.com/maxpat78>
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -172,6 +172,7 @@ HWND		hwndEdit;
 
 TCHAR szFileName[MAX_PATH];
 TCHAR szFileTitle[_MAX_FNAME + _MAX_EXT];
+TCHAR szWindowTitle[sizeof(szFileTitle) + sizeof(szAppName) + 4];
 TCHAR s0[512], s1[512];
 TCHAR *szEditBuffer, *szEditBufferBase;
 UINT uiFileEncoding = ENC_UTF8_BOM; // Default output encoding
@@ -633,15 +634,13 @@ void ShowAboutDlg(HWND hwndParent)
 
 void SetWindowFileName(HWND hwnd, TCHAR *szFileName)
 {
-	TCHAR ach[MAX_PATH + sizeof(szAppName) + 4];
-
 	// Remove extension
 	if (StrRStrI(szFileName, 0, _T(".txt")))
 		szFileName[lstrlen(szFileName) - 4] = _T('\0');
 
-	wsprintf(ach, _T("%s - %s"), szFileName, szAppName);
+	wsprintf(szWindowTitle, _T("%s - %s"), szFileName, szAppName);
 
-	SetWindowText(hwnd, ach);
+	SetWindowText(hwnd, szWindowTitle);
 }
 
 //
@@ -699,6 +698,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_COMMAND:
+		switch (HIWORD(wParam))
+		{
+			case EN_UPDATE:
+			{
+				// Signals modified buffer premitting '*' in window title
+				if (szWindowTitle[0] != _T('*')) {
+					int i;
+					GetWindowText(hwnd, szWindowTitle, sizeof(szWindowTitle));
+					for (i=lstrlen(szWindowTitle); i >= 0; i--) // move string forward in-place
+						szWindowTitle[i+1] = szWindowTitle[i];
+					szWindowTitle[0] = _T('*');
+					SetWindowText(hwnd, szWindowTitle);
+				}
+			}
+		}
+	
 		switch(LOWORD(wParam))
 		{
 		case IDM_FILE_EXIT:
