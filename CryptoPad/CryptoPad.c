@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2016,2017,2020,2021  <maxpat78> <https://github.com/maxpat78>
+*  Copyright (C) 2016-2023 maxpat78 <https://github.com/maxpat78>
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 
 #include "mZipAES.h"
 #include "resource.h"
+
+extern void AskPassword(BOOL bForceOpen);
 
 #define APP_TITLE   _T("CryptoPad")
 
@@ -217,6 +219,7 @@ void FlushMenus()
 	CheckMenuItem(menu, ID_ENCODING_UTF16BE, (uiFileEncoding == ENC_UTF16BE) ? MF_CHECKED : MF_UNCHECKED);
 
 	EnableMenuItem(menu, ID_FILE_RESETPASSWORD, (document_password && document_password[0]) ? MF_ENABLED : MF_GRAYED);
+	EnableMenuItem(menu, IDM_FILE_SAVE, (szFileName[0]) ? MF_ENABLED : MF_GRAYED);
 	EnableMenuItem(menu, IDM_EDUNDO, (SendMessage(hwndEdit, EM_CANUNDO, 0, 0)) ? MF_ENABLED : MF_GRAYED);
 	gsel = SendMessage(hwndEdit, EM_GETSEL, 0, 0);
 	flag = LOWORD(gsel) == HIWORD(gsel) ? MF_GRAYED : MF_ENABLED;
@@ -572,10 +575,15 @@ BOOL ShowSaveAsFileDlg(HWND hwnd, PSTR pstrFileName, PSTR pstrTitleName)
 	{
 		ret = GetSaveFileName(&ofn);
 
+		// Returns if User presses Cancel
+		if (!ret)
+			return ret;
+
 		// Adds a default extension, if missing
 		if (!StrChr(ofn.lpstrFile, _T('.')))
 			lstrcat(ofn.lpstrFile, _T(".txt"));
 
+		// If file exists, repeats until either a new name is selected, or overwrite confirmed
 		if (PathFileExists(ofn.lpstrFile))
 		{
 			LoadString(GetModuleHandle(0), IDS_STRING127, (LPWSTR)s0, sizeof(s0) / sizeof(TCHAR));
