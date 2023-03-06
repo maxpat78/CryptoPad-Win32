@@ -17,7 +17,7 @@ My simplified document format imposes some restrictions on the resulting ZIP arc
   7) an archive comment of a single byte ("R").
 
   NOTES:
-  - 6) and 7) apply to newer V2 format: files are always saved in V2 format
+  6) and 7) apply to newer V2 format: files are always saved in V2 format
   but it can open old V1 format transparently.
 
 The well known AE specification from WinZip[1] (WzAES) is implemented, so one of the following cryptographic toolkits/libraries is required to run the app:
