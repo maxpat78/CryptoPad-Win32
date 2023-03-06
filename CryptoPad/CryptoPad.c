@@ -17,7 +17,7 @@
 */
 
 //
-//	CryptoPad - simple text editor application supporting ZIP AE-1 encryption
+//	CryptoPad - simple text editor application supporting ZIP AE encryption
 //
 #include <tchar.h>
 #include <windows.h>
@@ -278,7 +278,7 @@ int LoadFile()
 		// Try to open a special ZIP document
 		dwRead = 0;
 		dwOutSize = 0;
-		dwRead = MiniZipAE1Read(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
+		dwRead = MiniZipAERead(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
 
 		if (dwRead == MZAE_ERR_SUCCESS)
 		{
@@ -287,7 +287,7 @@ int LoadFile()
 				return -1;
 		}
 
-		dwRead = MiniZipAE1Read(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
+		dwRead = MiniZipAERead(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
 		
 		if (dwRead == MZAE_ERR_SUCCESS)
 		{
@@ -318,6 +318,8 @@ int LoadFile()
 			return -1;
 		}
 	}
+	else
+		*document_password = 0; // resets password, or saved plain text will be encrypted
 
 	// If plain text document loaded
 	// dwInSize will represent the NULL terminated buffer length
@@ -476,7 +478,7 @@ BOOL SaveFile(int size)
 	if (document_password && document_password[0])
 	{
 		DWORD dwOutSize = 0;
-		err = MiniZipAE1Write(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
+		err = MiniZipAEWrite(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
 		if (err == MZAE_ERR_SUCCESS)
 		{
 			dst = Malloc(dwOutSize);
@@ -484,7 +486,7 @@ BOOL SaveFile(int size)
 				return FALSE;
 		}
 		else goto aeerr;
-		err = MiniZipAE1Write(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
+		err = MiniZipAEWrite(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
 		if (err != MZAE_ERR_SUCCESS)
 		{
 			Free(dst);

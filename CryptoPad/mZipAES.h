@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016  <maxpat78> <https://github.com/maxpat78>
+ *  Copyright (C) 2016-2023  maxpat78 <https://github.com/maxpat78>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,13 +77,13 @@ char* MZAE_errmsg(int code);
 	Returns zero for success.
 	If called with dstLen set to zero, fills it with the required number of bytes.
 */
-int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password);
+int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password);
 
 
 
 /*
 	Extracts in memory the single file from a Deflated and AES encrypted ZIP
-	archive created with MiniZipAE1Write function (accepts any key strength).
+	archive created with MiniZipAEWrite function (accepts any key strength).
 
 	src		compatible ZIP archive to extract from
 	srcLen		length of src buffer
@@ -94,7 +94,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	Returns zero for success.
 	If called with dstLen set to zero, fills it with the required number of bytes.
 */
-int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password);
+int MiniZipAERead(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password);
 
 
 
@@ -155,7 +155,7 @@ int MZAE_hmac_sha1_80(char* key, unsigned int keylen, char* src, unsigned int sr
 
 
 /*
-	Computates the ZIP crc32.
+	Computates the ZIP crc32 (AE-1).
 	
 	crc			initial crc value to update
 	src			source buffer

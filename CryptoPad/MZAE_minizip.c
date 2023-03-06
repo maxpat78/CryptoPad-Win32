@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016, 2019  <maxpat78> <https://github.com/maxpat78>
+ *  Copyright (C) 2016-2023  maxpat78 <https://github.com/maxpat78>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,23 +17,24 @@
  */
 
 /*
-   Provides high level functions to create and extract a deflated & AES-256
-   encrypted ZIP archive in memory.
+  Provides high level functions to create and extract a deflated & AES-256
+  encrypted ZIP archive in memory.
 
-   My simplified document format imposes:
-   1) a fixed filename length of 4 bytes ("data");
-   2) a single extra field (the AES header);
-   3) Deflate compression always;
-   4) 256-bit key strength (but can decrypt with smaller keys);
-   5) text encoded in UTF-8 with BOM, CR-LF ended;
-   6) text reversed before compression (V2) and thus
-   7) an archive comment of a single byte ("R").
+  My simplified document format imposes:
+  1) a fixed filename length of 4 bytes ("data");
+  2) a single extra field (the AES header);
+  3) Deflate compression always;
+  4) 256-bit key strength (but can decrypt with smaller keys);
+  5) text encoded in UTF-8 with BOM, CR-LF ended;
+  6) text reversed before compression (V2) and thus
+  7) an archive comment of a single byte ("R").
 
-NOTE: 6) and 7) apply to newer V2 format. Files are always saved in V2 format
-but it can open old V1 format transparently.
+  NOTES:
+  - 6) and 7) apply to newer V2 format: files are always saved in V2 format
+  but it can open old V1 format transparently.
 
-   A summary of ZIP archive with strong encryption layout (according to WinZip
-   specs: look at http://www.winzip.com/aes_info.htm) follows.
+  A summary of ZIP archive with strong encryption layout (according to WinZip
+  specs: look at http://www.winzip.com/aes_info.htm) follows.
    
   Local file header:
     local file header signature     4 bytes  (0x04034b50)
@@ -51,13 +52,13 @@ but it can open old V1 format transparently.
     filename (variable size)
     extra field (variable size)
 
-  Extended AES header (both local & central) based on WinZip 9 specs:
+  Extended AES header (both local & central) based on WinZip specs:
     extra field header      2 bytes  (0x9901)
-    size                    2 bytes  (7)
+    size                    2 bytes  (actually, 7)
     version                 2 bytes  (1 or 2)
     ZIP vendor              2 bytes  (actually, AE)
-    strength                1 byte   (AES 1=128-bit key, 2=192, 3=256)
-    actual compression      2 byte   (becomes 0x99 in LENT & CENT)
+    strength                1 byte   (AES key bits: 1=128, 2=192, 3=256)
+    actual compression      2 byte   (becomes 0x63 in LENT & CENT)
 
     content data, as follows:
     random salt (8, 12 or 16 byte depending on key size)
@@ -65,7 +66,8 @@ but it can open old V1 format transparently.
     AES encrypted data (CTR mode, little endian counter)
     10-byte authentication code for encrypted data from HMAC-SHA1
 
-NOTE: AE-1 preserves CRC-32 on uncompressed data, AE-2 sets it to zero.
+  NOTE: AE-1 preserves CRC-32 on uncompressed data, AE-2 sets it to zero and
+  is used for uncompressed files < 20 bytes.
 
   Central File header:
     central file header signature   4 bytes  (0x02014b50)
@@ -127,7 +129,7 @@ while (b > t) { \
 } \
 }
 
-int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
+int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
 {
 	char *tmpbuf = NULL;
 	unsigned int buflen;
@@ -222,8 +224,6 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 		return MZAE_ERR_HMAC;
 	}
 
-	crc = MZAE_crc(0, revSrc, srcLen);
-
 	p = *dst;
 	memcpy(p, ucLocalHeader, sizeof(ucLocalHeader));
 
@@ -234,6 +234,15 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	#define PDW(a, b) *((int*)(p+a)) = b
 	#define PW(a, b) *((short*)(p+a)) = b
 #endif
+
+	if (srcLen < 20)
+	{
+		PW(38, 2); // AE-2
+		crc = 0;
+	} 
+	else {
+		crc = MZAE_crc(0, revSrc, srcLen);
+	}
 
 	// Builds the ZIP Local File Header
 #ifdef USE_TIME
@@ -263,6 +272,8 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	PDW(16, crc);
 	PDW(20, buflen + 28);
 	PDW(24, srcLen);
+	if (srcLen < 20)
+		PW(54, 2); // AE-2
 
 	p += 61;
 	memcpy(p, ucEndHeader, sizeof(ucEndHeader));
@@ -277,9 +288,7 @@ int MiniZipAE1Write(char* src, unsigned long srcLen, char** dst, unsigned long *
 	return MZAE_ERR_SUCCESS;
 }
 
-
-
-int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
+int MiniZipAERead(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
 {
 	long crc = 0;
 	unsigned long compSize, uncompSize, keyLen;
@@ -311,7 +320,7 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 
 	// Here a ZIP with item name >4 (field 26) is bad, too
 	if (GDW(0) != 0x04034B50 || GW(8) != 99 ||
-		GW(28) != 11 || GW(34) != 0x9901 || GW(38) != 1 || GW(40) != 0x4541)
+		GW(28) != 11 || GW(34) != 0x9901 || GW(38) > 2 || GW(40) != 0x4541)
 		return MZAE_ERR_BADZIP;
 
 	compSize = GDW(18)-(12+(4+keyLen*4)); // size & offset depend on salt size!
@@ -349,15 +358,23 @@ int MiniZipAE1Read(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	// Decrypts into a temporary buffer
 	if (MZAE_ctr_crypt(aes_key, 8*(keyLen+1), compdata, compSize, &pbuf))
 		return MZAE_ERR_AES;
-
-	if (MZAE_inflate(pbuf, compSize, *dst, uncompSize))
-		return MZAE_ERR_CODEC;
 	
-	crc = MZAE_crc(0, *dst, uncompSize);
+	// Inflates if method <> zero
+	if (GW(43) != 0) {
+		if (MZAE_inflate(pbuf, compSize, *dst, uncompSize))
+			return MZAE_ERR_CODEC;
+	}
+	else
+		memcpy(*dst, pbuf, compSize);
 
-	// Compares the CRCs on uncompressed data
-	if (crc != GDW(14))
-		return MZAE_ERR_BADCRC;
+	// AE-1 encryption only
+	if (GW(38) == 1) {
+		crc = MZAE_crc(0, *dst, uncompSize);
+
+		// Compares the CRCs on uncompressed data
+		if (crc != GDW(14))
+			return MZAE_ERR_BADCRC;
+	}
 
 	if (*(src+srcLen-1) == 0x52) // If V2 format
 		memrev(*dst, uncompSize)
@@ -376,20 +393,20 @@ void main()
 #ifdef MAIN_SAVES
 	FILE *f = fopen("test.zip", "wb");
 #endif
-	char *s = "Questo testo è la sorgente da comprimere e cifrare con MiniZipAE1Write, per poi verificarne l'uguaglianza con il prodotto di MiniZipAE1Read!";
+	char *s = "Questo testo è la sorgente da comprimere e cifrare con MiniZipAEWrite, per poi verificarne l'uguaglianza con il prodotto di MiniZipAERead!";
 	char *out1, *out2;
 	long len1=0, len2=0, r;
-	r = MiniZipAE1Write(s, strlen(s), &out1, &len1, "kazookazaa");
-	printf("MiniZipAE1Write returned %d: %s (requires %d bytes buffer)\n", r, MZAE_errmsg(r), len1);
+	r = MiniZipAEWrite(s, strlen(s), &out1, &len1, "kazookazaa");
+	printf("MiniZipAEWrite returned %d: %s (requires %d bytes buffer)\n", r, MZAE_errmsg(r), len1);
 	out1 = (char*) malloc(len1);
-	r = MiniZipAE1Write(s, strlen(s), &out1, &len1, "kazookazaa");
-	printf("MiniZipAE1Write returned %d: %s\n", r, MZAE_errmsg(r));
+	r = MiniZipAEWrite(s, strlen(s), &out1, &len1, "kazookazaa");
+	printf("MiniZipAEWrite returned %d: %s\n", r, MZAE_errmsg(r));
 
-	r = MiniZipAE1Read(out1, len1, &out2, &len2, "kazookazaa");
-	printf("MiniZipAE1Read returned %d: %s (requires %d bytes buffer)\n", r, MZAE_errmsg(r), len2);
+	r = MiniZipAERead(out1, len1, &out2, &len2, "kazookazaa");
+	printf("MiniZipAERead returned %d: %s (requires %d bytes buffer)\n", r, MZAE_errmsg(r), len2);
 	out2 = (char*) malloc(len2);
-	r = MiniZipAE1Read(out1, len1, &out2, &len2, "kazookazaa");
-	printf("MiniZipAE1Read returned %d: %s\n", r, MZAE_errmsg(r));
+	r = MiniZipAERead(out1, len1, &out2, &len2, "kazookazaa");
+	printf("MiniZipAERead returned %d: %s\n", r, MZAE_errmsg(r));
 
 	if (len2 != strlen(s) || memcmp(s, out2, len2) != 0)
 		printf("SELF TEST FAILED!");
