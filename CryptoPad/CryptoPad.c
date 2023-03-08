@@ -29,6 +29,16 @@
 
 extern void AskPassword(BOOL bForceOpen);
 
+void memrev(unsigned char* m, unsigned int l) {
+	unsigned char* t = m;
+	unsigned char* b = m + l - 1;
+	while (b > t) {
+		unsigned char c = *t;
+		*t = *b; *b = c;
+		t++; b--;
+	}
+}
+
 #define APP_TITLE   _T("CryptoPad")
 
 enum Encodings {
@@ -288,7 +298,10 @@ int LoadFile()
 		}
 
 		dwRead = MiniZipAERead(lpBuffer, dwInSize, &dst, (unsigned long*)&dwOutSize, document_password);
-		
+	
+		if (*(lpBuffer+dwInSize-1) == 0x52) // if V2 doc format
+			memrev(dst, dwOutSize);
+
 		if (dwRead == MZAE_ERR_SUCCESS)
 		{
 			Free(lpBuffer);
@@ -478,15 +491,24 @@ BOOL SaveFile(int size)
 	if (document_password && document_password[0])
 	{
 		DWORD dwOutSize = 0;
+
+		memrev(p, size); // reverses source buffer (V2 document format)
+		// calc and alloca reqd buf size
 		err = MiniZipAEWrite(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
+	
 		if (err == MZAE_ERR_SUCCESS)
 		{
 			dst = Malloc(dwOutSize);
 			if (!dst)
+			{
+				memrev(p, size);
 				return FALSE;
+			}
 		}
 		else goto aeerr;
+	
 		err = MiniZipAEWrite(p, size, &dst, (unsigned long*)&dwOutSize, document_password);
+		memrev(p, size);
 		if (err != MZAE_ERR_SUCCESS)
 		{
 			Free(dst);
@@ -713,7 +735,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case EN_UPDATE:
 			{
 				// Signals modified buffer premitting '*' in window title
-				if (szWindowTitle[0] != _T('*')) {
+				if (szWindowTitle[0] != _T('*'))
+				{
 					int i;
 					GetWindowText(hwnd, szWindowTitle, sizeof(szWindowTitle));
 					for (i=lstrlen(szWindowTitle); i >= 0; i--) // move string forward in-place

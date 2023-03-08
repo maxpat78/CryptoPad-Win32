@@ -23,7 +23,7 @@
   My simplified document format imposes:
   1) a fixed filename length of 4 bytes ("data");
   2) a single extra field (the AES header);
-  3) Deflate compression always;
+  3) Deflate compression (but Store if bigger);
   4) 256-bit key strength (but can decrypt with smaller keys);
   5) text encoded in UTF-8 with BOM, CR-LF ended;
   6) text reversed before compression (V2) and thus
@@ -58,7 +58,7 @@
     version                 2 bytes  (1 or 2)
     ZIP vendor              2 bytes  (actually, AE)
     strength                1 byte   (AES key bits: 1=128, 2=192, 3=256)
-    actual compression      2 byte   (becomes 0x63 in LENT & CENT)
+    actual compression      2 byte   (0=Stored, 8=Deflated; becomes 0x63 in LENT & CENT)
 
     content data, as follows:
     random salt (8, 12 or 16 byte depending on key size)
@@ -119,20 +119,10 @@
 	#define BS32(x) (x & 0xFF000000) >> 24 | ((x & 0xFF0000) >> 16) << 8 | ((x & 0xFF00) >> 8) << 16 | (x & 0xFF) << 24 
 #endif
 
-#define memrev(m, l) { \
-char *t = m; \
-char *b = m+l-1; \
-while (b > t) { \
-	char c = *t; \
-	*t=*b; *b=c; \
-	t++; b--; \
-} \
-}
-
 int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *dstLen, char* password)
 {
 	char *tmpbuf = NULL;
-	unsigned int buflen;
+	unsigned int buflen, ret, method=8;
 	long crc = 0;
 	char salt[16];
 	char* aes_key;
@@ -140,7 +130,6 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	char* vv;
 	char *ppbuf;
 	char *digest, *p;
-	char* revSrc;
 	unsigned char ucLocalHeader[45] = {
 		0x50, 0x4B, 0x03, 0x04, 0x33, 0x00, 0x01, 0x00,
 		0x63, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00,
@@ -172,18 +161,20 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	if (!srcLen)
 		return MZAE_ERR_PARAMS;
 
-	// Reverse source buffer copy
-	revSrc = (char*) malloc(srcLen);
-	memcpy(revSrc, src, srcLen);
-	memrev(revSrc, srcLen)
-	
-	if (MZAE_deflate(revSrc, srcLen, &tmpbuf, &buflen))
-		return MZAE_ERR_CODEC;
-	
+	ret = MZAE_deflate(src, srcLen, &tmpbuf, &buflen);
+
+	// Switch from Deflate to Store if error or disadvantage
+	if (ret || buflen >= srcLen)
+	{
+		method = 0;
+		buflen = srcLen;
+	}
+
 	if (! *dstLen)
 	{
 		*dstLen = buflen + 45 + 28 + 61 + 23; //(45+28)+61+23
-		free(tmpbuf);
+		if (tmpbuf)
+			free(tmpbuf);
 		return MZAE_ERR_SUCCESS;
 	}
 
@@ -212,6 +203,13 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 		return MZAE_ERR_KDF;
 	}
 	
+	if (method == 0)
+	{
+		free(tmpbuf);
+		tmpbuf = (char*) malloc(buflen);
+		memcpy(tmpbuf, src, srcLen);
+	}
+
 	if (MZAE_ctr_crypt(aes_key, 32, tmpbuf, buflen, &ppbuf))
 	{
 		free(tmpbuf);
@@ -241,7 +239,7 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 		crc = 0;
 	} 
 	else {
-		crc = MZAE_crc(0, revSrc, srcLen);
+		crc = MZAE_crc(0, src, srcLen);
 	}
 
 	// Builds the ZIP Local File Header
@@ -254,6 +252,7 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	PDW(14, crc);
 	PDW(18, buflen+28);
 	PDW(22, srcLen);
+	PW(43, method);
 
 	// Copies the raw contents: salt, check word, encrypted data and HMAC
 	memcpy(p + 45, salt, 16);
@@ -274,6 +273,7 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 	PDW(24, srcLen);
 	if (srcLen < 20)
 		PW(54, 2); // AE-2
+	PW(59, method);
 
 	p += 61;
 	memcpy(p, ucEndHeader, sizeof(ucEndHeader));
@@ -283,7 +283,6 @@ int MiniZipAEWrite(char* src, unsigned long srcLen, char** dst, unsigned long *d
 
 	free(tmpbuf);
 	free(ppbuf);
-	free(revSrc);
 	
 	return MZAE_ERR_SUCCESS;
 }
@@ -376,9 +375,6 @@ int MiniZipAERead(char* src, unsigned long srcLen, char** dst, unsigned long *ds
 			return MZAE_ERR_BADCRC;
 	}
 
-	if (*(src+srcLen-1) == 0x52) // If V2 format
-		memrev(*dst, uncompSize)
-	
 	free(pbuf);
 
 	return MZAE_ERR_SUCCESS;
